@@ -1,0 +1,68 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLXRfuscator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">F</div>
+  <h1>FLXRfuscator <span>// lua obfuscation engine</span></h1>
+  <div class="tag">v1.0 · client-side</div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="panel-head">
+      <span class="dot"></span> input
+      <div class="right"><span id="inSize">0 B</span></div>
+    </div>
+    <div class="drop" id="drop">
+      drop a <b>.lua</b> / <b>.txt</b> file here — or click to browse
+      <input type="file" id="file" hidden accept=".lua,.txt,.luau,*/*">
+    </div>
+    <textarea id="input" placeholder="-- paste your Lua here&#10;print('hello world')"></textarea>
+    <div class="opts">
+      <div class="opt"><input type="checkbox" id="oStr" checked><label for="oStr">String encryption</label></div>
+      <div class="opt"><input type="checkbox" id="oMangle" checked><label for="oMangle">Identifier mangling</label></div>
+      <div class="opt"><input type="checkbox" id="oDead" checked><label for="oDead">Dead code injection</label></div>
+      <div class="opt"><input type="checkbox" id="oCF" checked><label for="oCF">VM wrapper</label></div>
+      <div class="opt"><input type="checkbox" id="oInt" checked><label for="oInt">Integrity check</label></div>
+      <div class="opt"><input type="checkbox" id="oWM" checked><label for="oWM">Watermark</label></div>
+    </div>
+    <div class="btnbar">
+      <button class="primary" id="go">Obfuscate</button>
+      <button id="clear">Clear</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <span class="dot green"></span> output
+      <div class="right"><span id="outSize">0 B</span></div>
+    </div>
+    <textarea id="output" readonly placeholder="// obfuscated output will appear here"></textarea>
+    <div class="stats">
+      <span>ratio: <b id="ratio">—</b></span>
+      <span>delta: <b id="delta">—</b></span>
+      <span>time: <b id="time">—</b></span>
+    </div>
+    <div class="btnbar">
+      <button id="copy" style="flex:1">Copy</button>
+      <button id="dl" style="flex:1">Download .lua</button>
+    </div>
+  </section>
+</main>
+
+<footer>powered by <b>FLXRfuscator</b> — ykyk · all processing local, nothing leaves your browser</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="obfuscator.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
