@@ -272,85 +272,115 @@ function buildDeadCodeSrc(){
   return blocks[Math.floor(Math.random()*blocks.length)] + ' ';
 }
 
+/* ---------- random ident helper ---------- */
+const RCH = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function makeIdGen(){
+  const used = new Set();
+  return function nid(){
+    let s;
+    do {
+      s = '';
+      const len = 6 + Math.floor(Math.random()*4);
+      for(let i=0;i<len;i++) s += RCH[Math.floor(Math.random()*RCH.length)];
+    } while(used.has(s));
+    used.add(s);
+    return '_' + s;
+  };
+}
+
+/* ---------- VM wrapper ---------- */
 function buildVMSrc(code, opts){
   const key = randomBytes(24);
   const enc = xorBytes(strToBytes(code), key);
   const b64 = encodeB64(enc);
   const hash = fnvLike(b64);
-  const kBytes = key.map(b=>'0x'+b.toString(16).padStart(2,'0')).join(',');
+
+  const nid = makeIdGen();
+  const N = {
+    str: nid(), tab: nid(), mat: nid(), ldr: nid(),
+    alp: nid(), key: nid(), pl: nid(), map: nid(),
+    dec: nid(), xr:  nid(), pc:  nid(), fn:  nid(), src: nid(),
+    h:   nid(), i:   nid(), o:   nid(), a:   nid(), b:   nid(),
+    c:   nid(), e:   nid(), n:   nid(), j:   nid(), r:   nid(),
+    bit: nid(), x:   nid(), y:   nid(), d:   nid()
+  };
+
+  // alphabet encoded as decimal byte escapes → looks like \90\113\88\107...
+  const alphaEsc = strToBytes(ALPHABET).map(b => '\\' + b).join('');
+  const kBytes = key.map(b => '0x'+b.toString(16).padStart(2,'0')).join(',');
 
   const integrityBlock = opts.integrity ? `
-local _h=5381
-for _i=1,#_P do _h=(_h*33+_P:byte(_i))%4294967296 end
-if _h~=${hash} then error("FLXR: integrity check failed") end
-` : '';
+local ${N.h}=5381
+for ${N.i}=1,#${N.pl} do ${N.h}=(${N.h}*33+${N.pl}:byte(${N.i}))%4294967296 end
+if ${N.h}~=${hash} then error("FLXR: integrity check failed") end` : '';
 
-  return `local _s=string
-local _t=table
-local _m=math
-local _l=loadstring or load
-local _A="${ALPHABET}"
-local _K={${kBytes}}
-local _P="${b64}"
-local _M={}
-for _i=1,#_A do _M[_A:sub(_i,_i)]=_i-1 end
-local function _dec(_d)
-  local _o={}
-  local _i=1
-  while _i<=#_d do
-    local _a,_b,_c,_e=_M[_d:sub(_i,_i)],_M[_d:sub(_i+1,_i+1)],_M[_d:sub(_i+2,_i+2)],_M[_d:sub(_i+3,_i+3)]
-    if not _a or not _b then break end
-    local _n=_a*262144+_b*4096
-    if _c then _n=_n+_c*64 end
-    if _e then _n=_n+_e end
-    _o[#_o+1]=_s.char(_m.floor(_n/65536)%256)
-    if _c then _o[#_o+1]=_s.char(_m.floor(_n/256)%256) end
-    if _e then _o[#_o+1]=_s.char(_n%256) end
-    _i=_i+4
-  end
-  return _t.concat(_o)
+  // compact, no comments, random names, encoded alphabet
+  return `local ${N.str}=string local ${N.tab}=table local ${N.mat}=math
+local ${N.ldr}=loadstring or load
+if not ${N.ldr} then
+  if warn then warn("[FLXRfuscator] loadstring is not available in this environment (Studio needs LoadStringEnabled; otherwise use an executor)") end
+  return
 end
-local function _xor(_d)
-  local _o={}
-  for _i=1,#_d do
-    local _a=_d:byte(_i)
-    local _b=_K[((_i-1)%#_K)+1]
-    local _r,_bit=0,1
-    for _=1,8 do
-      local _x,_y=_a%2,_b%2
-      if _x~=_y then _r=_r+_bit end
-      _a,_b,_bit=_m.floor(_a/2),_m.floor(_b/2),_bit*2
-    end
-    _o[_i]=_s.char(_r)
-  end
-  return _t.concat(_o)
+local ${N.alp}="${alphaEsc}"
+local ${N.key}={${kBytes}}
+local ${N.pl}="${b64}"
+local ${N.map}={}
+for ${N.i}=1,#${N.alp} do ${N.map}[${N.alp}:sub(${N.i},${N.i})]=${N.i}-1 end
+local function ${N.dec}(${N.d})
+local ${N.o}={}
+local ${N.i}=1
+while ${N.i}<=#${N.d} do
+local ${N.a},${N.b},${N.c},${N.e}=${N.map}[${N.d}:sub(${N.i},${N.i})],${N.map}[${N.d}:sub(${N.i}+1,${N.i}+1)],${N.map}[${N.d}:sub(${N.i}+2,${N.i}+2)],${N.map}[${N.d}:sub(${N.i}+3,${N.i}+3)]
+if not ${N.a} or not ${N.b} then break end
+local ${N.n}=${N.a}*262144+${N.b}*4096
+if ${N.c} then ${N.n}=${N.n}+${N.c}*64 end
+if ${N.e} then ${N.n}=${N.n}+${N.e} end
+${N.o}[#${N.o}+1]=${N.str}.char(${N.mat}.floor(${N.n}/65536)%256)
+if ${N.c} then ${N.o}[#${N.o}+1]=${N.str}.char(${N.mat}.floor(${N.n}/256)%256) end
+if ${N.e} then ${N.o}[#${N.o}+1]=${N.str}.char(${N.n}%256) end
+${N.i}=${N.i}+4
+end
+return ${N.tab}.concat(${N.o})
+end
+local function ${N.xr}(${N.d})
+local ${N.o}={}
+for ${N.i}=1,#${N.d} do
+local ${N.a}=${N.d}:byte(${N.i})
+local ${N.b}=${N.key}[(((${N.i}-1))%#${N.key})+1]
+local ${N.r},${N.bit}=0,1
+for _=1,8 do
+local ${N.x},${N.y}=${N.a}%2,${N.b}%2
+if ${N.x}~=${N.y} then ${N.r}=${N.r}+${N.bit} end
+${N.a},${N.b},${N.bit}=${N.mat}.floor(${N.a}/2),${N.mat}.floor(${N.b}/2),${N.bit}*2
+end
+${N.o}[${N.i}]=${N.str}.char(${N.r})
+end
+return ${N.tab}.concat(${N.o})
 end
 ${integrityBlock}
-local _pc=1
-local _fn=nil
-local _src=nil
-while _pc~=0 do
-  if _pc==1 then
-    _src=_xor(_dec(_P))
-    _pc=2
-  elseif _pc==2 then
-    _fn=_l(_src,"=FLXR")
-    _pc=_fn and 3 or 0
-  elseif _pc==3 then
-    if setfenv then pcall(setfenv,_fn,_G) end
-    _fn()
-    _pc=0
-  else
-    _pc=0
-  end
+local ${N.pc}=1
+local ${N.fn}=nil
+local ${N.src}=nil
+while ${N.pc}~=0 do
+if ${N.pc}==1 then
+${N.src}=${N.xr}(${N.dec}(${N.pl}))
+${N.pc}=2
+elseif ${N.pc}==2 then
+${N.fn}=${N.ldr}(${N.src},"=FLXR")
+${N.pc}=${N.fn} and 3 or 0
+elseif ${N.pc}==3 then
+if setfenv then pcall(setfenv,${N.fn},(getfenv and getfenv()) or _G) end
+${N.fn}(...)
+${N.pc}=0
+else
+${N.pc}=0
+end
 end`;
 }
 
+/* ---------- watermark (kept minimal) ---------- */
 function buildWatermark(){
-  return `--[[
-  FLXRfuscator v1.0 · ykyk
-  protected build · do not redistribute
-]]--`;
+  return `--[[FLXRfuscator v1.0 | ykyk]]--\n`;
 }
 
 function obfuscate(src, opts){
@@ -378,7 +408,7 @@ function obfuscate(src, opts){
 
   if(opts.vm) code = buildVMSrc(code, opts);
 
-  if(opts.watermark) code = buildWatermark() + '\n' + code;
+  if(opts.watermark) code = buildWatermark() + code;
 
   return { code, time: performance.now() - t0 };
 }
